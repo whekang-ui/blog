@@ -1,0 +1,18 @@
+# Naver Blog Automation (dermatology) — dependencies
+# Core
+anthropic>=0.40.0          # Claude API (content/topics/SEO, web search tool)
+python-dotenv>=1.0.0       # load .env (API keys)
+requests>=2.31.0           # Naver DataLab API
+
+# Images
+Pillow>=10.0.0             # infographic rendering, image processing
+matplotlib>=3.8.0          # chart-style infographics
+
+# OS-level automation (Windows). Optional on non-Windows dev machines.
+pyautogui>=0.9.54          # mouse/keyboard automation
+pyperclip>=1.8.2           # clipboard (the only reliable way to type Hangul)
+pygetwindow>=0.0.9         # focus the Chrome window
+opencv-python>=4.9.0       # button image matching (locateOnScreen confidence=)
+
+# Dev / tests
+pytest>=8.0.0
