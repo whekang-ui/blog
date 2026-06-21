@@ -14,5 +14,12 @@ pyperclip>=1.8.2           # clipboard (the only reliable way to type Hangul)
 pygetwindow>=0.0.9         # focus the Chrome window
 opencv-python>=4.9.0       # button image matching (locateOnScreen confidence=)
 
+# Optional — AI 비임상 이미지 생성 (IMAGE_API_PROVIDER=openai 일 때만 필요)
+# 미설치/키 없음이면 자동 비활성(인포그래픽으로 폴백).
+# openai>=1.40.0
+
+# GUI 는 표준 라이브러리 tkinter 사용 — 별도 설치 불필요(Windows 파이썬 기본 포함).
+# (리눅스에서 GUI 테스트 시: sudo apt-get install python3-tk)
+
 # Dev / tests
 pytest>=8.0.0

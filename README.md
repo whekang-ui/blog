@@ -39,14 +39,35 @@ pip install -r requirements.txt
 좌표 하드코딩 대신 화면에서 버튼 이미지를 찾습니다. `assets/` 폴더에 본인 화면의 캡처를 넣으세요:
 - `title_area.png`(제목 영역), `body_area.png`(본문 영역), `image_button.png`(사진 첨부),
   `tag_area.png`(태그 입력), `publish_button.png`(발행 버튼)
-- (선택) `schedule_toggle.png`(예약 토글), `confirm_button.png`(발행 확정)
+- (선택, 예약발행) `schedule_toggle.png`(예약 토글), `schedule_date.png`(날짜 입력칸),
+  `schedule_time.png`(시간 입력칸), `confirm_button.png`(발행 확정)
+  - 예약 날짜/시간 입력 포맷은 `config.json` 의 `automation.schedule_date_format`(기본
+    `%Y.%m.%d`), `schedule_time_format`(기본 `%H:%M`)으로 맞추세요. 캡처가 없으면 예약 토글까지만
+    자동화하고 시각은 직접 지정합니다.
 
 > 네이버 로그인은 자동화하지 않습니다. 평소 쓰는 Chrome 으로 **직접 로그인**한 뒤 글쓰기 페이지를
 > 열어두고 프로그램을 실행하세요.
 
 ---
 
-## 사용법 (파이프라인)
+## 🖥️ 가장 쉬운 사용법 — 데스크톱 GUI
+명령어가 어렵다면 GUI 를 쓰세요. 클릭만으로 전체 과정을 진행합니다.
+```bash
+python -m src.gui
+```
+- 탭 순서대로: **1.주제 → 2.생성 → 3.이미지 → 4.검토·발행**.
+- 상단 목록에서 글을 선택하고, 각 탭의 버튼을 누르면 됩니다. 하단 로그에 진행 상황이 표시됩니다.
+- 발행 전 **드라이런(계획만)** 으로 동작을 먼저 확인하고, **비공개**로 발행해 결과를 본 뒤 공개하세요.
+- (Windows 파이썬은 tkinter 가 기본 포함되어 추가 설치가 필요 없습니다.)
+
+### AI 비임상 이미지 (선택)
+- `.env` 에 `IMAGE_API_PROVIDER=openai`, `IMAGE_API_KEY=...` 를 넣고 `pip install openai`,
+  `config.json` 의 `images.ai_images_enabled=true` 로 설정하면 **비임상** 개념/모델/일러스트 이미지를
+  생성합니다. 크기는 `images.ai_size`(기본 `1024x1024`).
+- 의료법 가드: 설명에 환자/시술 전후/병변 등 임상 의도가 있으면 생성을 거부하고 인포그래픽으로
+  폴백합니다. **실제 임상사진은 환자 동의를 받은 직접 촬영본만** 사용하세요.
+
+## 사용법 (CLI 파이프라인)
 ```bash
 # 1) 주제 발굴 — 자동(트렌드) 또는 수동
 python -m src.main topics --auto                 # 웹검색+데이터랩으로 수요 높은 주제 발굴
@@ -108,5 +129,6 @@ src/
   images/    AI 비임상(ai_image), 인포그래픽(infographic), 내 사진(user_photos), alt(alt_text)
   automation/ 에디터 구동(naver_editor), 사람같은 동작(humanize), 버튼 인식(ui_locator)
   storage/   SQLite(db)
-  review.py  검토/승인   scheduler.py 발행/예약   main.py CLI   config.py/llm.py 공통
+  review.py  검토/승인   scheduler.py 발행/예약
+  main.py    CLI 엔트리   gui.py 데스크톱 GUI(Tkinter)   config.py/llm.py 공통
 ```

@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 
 from ..config import Config
@@ -39,6 +40,21 @@ class Segment:
     kind: str  # 'text' | 'image'
     text: str = ""
     image: PreparedImage | None = None
+
+
+def format_schedule(
+    scheduled_at: str, date_fmt: str, time_fmt: str
+) -> tuple[str, str] | None:
+    """ISO 예약시각 문자열을 (날짜문자열, 시간문자열)로 변환. 파싱 실패 시 None.
+
+    네이버 예약 UI 의 날짜/시간 입력 포맷은 환경마다 달라 config 로 지정한다.
+    예: date_fmt="%Y.%m.%d", time_fmt="%H:%M"
+    """
+    try:
+        dt = datetime.fromisoformat(scheduled_at)
+    except ValueError:
+        return None
+    return dt.strftime(date_fmt), dt.strftime(time_fmt)
 
 
 def build_segments(body: str, images: list[PreparedImage]) -> list[Segment]:
@@ -146,15 +162,39 @@ class NaverEditor:
     def _finalize(self, options: PublishOptions) -> None:
         x, y = self.locator.find("publish_button.png")
         self.humanizer.move_click(x, y)
-        # 발행 옵션 패널에서 비공개/예약 설정은 캡처가 있을 때만 자동화한다.
-        if options.scheduled_at and self.locator.exists("schedule_toggle.png"):
-            sx, sy = self.locator.find("schedule_toggle.png")
-            self.humanizer.move_click(sx, sy)
-            # 날짜/시간 입력 UI 는 환경별로 달라 수동 캡처 매핑 필요 → 로그로 안내
+        # 발행 옵션 패널에서 예약 설정(캡처가 있을 때만 자동화)
+        if options.scheduled_at:
+            self._set_schedule(options.scheduled_at)
         # 최종 발행 확정 버튼(있으면)
         if self.locator.exists("confirm_button.png"):
             cx, cy = self.locator.find("confirm_button.png")
             self.humanizer.move_click(cx, cy)
+
+    def _set_schedule(self, scheduled_at: str) -> None:
+        """예약 토글을 켜고 날짜/시간 필드에 값을 입력한다.
+
+        schedule_toggle/date/time 캡처가 모두 있을 때만 날짜·시간을 자동 입력한다.
+        토글만 있으면 토글까지만 수행(이후 사용자가 직접 시각 지정).
+        """
+        if not self.locator.exists("schedule_toggle.png"):
+            return
+        sx, sy = self.locator.find("schedule_toggle.png")
+        self.humanizer.move_click(sx, sy)
+
+        date_fmt = self.config.get("automation.schedule_date_format", "%Y.%m.%d")
+        time_fmt = self.config.get("automation.schedule_time_format", "%H:%M")
+        formatted = format_schedule(scheduled_at, date_fmt, time_fmt)
+        if not formatted:
+            return
+        date_str, time_str = formatted
+        if self.locator.exists("schedule_date.png"):
+            dx, dy = self.locator.find("schedule_date.png")
+            self.humanizer.move_click(dx, dy)
+            self.humanizer.paste_text(date_str)
+        if self.locator.exists("schedule_time.png"):
+            tx, ty = self.locator.find("schedule_time.png")
+            self.humanizer.move_click(tx, ty)
+            self.humanizer.paste_text(time_str)
 
     # ---- plan (dry-run) -------------------------------------------------
     def _make_plan(
@@ -184,7 +224,15 @@ class NaverEditor:
         plan.append(f"[4] 태그 {len(tags)}개 입력: {', '.join(tags)}")
         vis = "비공개" if options.visibility == "private" else "공개"
         if options.scheduled_at:
-            plan.append(f"[5] 예약 발행({vis}) @ {options.scheduled_at}")
+            date_fmt = self.config.get("automation.schedule_date_format", "%Y.%m.%d")
+            time_fmt = self.config.get("automation.schedule_time_format", "%H:%M")
+            formatted = format_schedule(options.scheduled_at, date_fmt, time_fmt)
+            plan.append(f"[5] 발행 버튼 클릭 → 예약 토글 ON")
+            if formatted:
+                date_str, time_str = formatted
+                plan.append(f"    - 날짜 입력: {date_str}")
+                plan.append(f"    - 시간 입력: {time_str}")
+            plan.append(f"[6] 예약 발행 확정({vis}) @ {options.scheduled_at}")
         else:
             plan.append(f"[5] 즉시 발행({vis})")
         plan.append(f"(요약: 텍스트 {n_text}블록, 이미지 {n_img}개)")

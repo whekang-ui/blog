@@ -4,12 +4,14 @@
 표현 등)의 '비임상' 이미지만 생성한다. 의료법상 가짜 임상/시술 전후/환자 사진은 절대 생성 금지.
 
 외부 이미지 생성 API 는 교체 가능(pluggable)하다. IMAGE_API_PROVIDER 가 비어있으면 비활성.
-현재는 'openai' 프로바이더 예시를 포함한다. 키/프로바이더가 없으면 None 을 반환한다.
+현재는 'openai' 프로바이더를 지원한다. 키/프로바이더/패키지가 없으면 None 을 반환(인포그래픽 폴백).
 """
 
 from __future__ import annotations
 
+import base64
 from pathlib import Path
+from typing import Any
 
 from ..config import Config
 
@@ -26,10 +28,18 @@ _SAFE_STYLE = (
     "healthy glowing skin aesthetic, Korean beauty mood"
 )
 
+_DEFAULT_SIZE = "1024x1024"
+
 
 def is_clinical_intent(description: str) -> bool:
+    """설명에 임상/환자/전후 의도가 포함되어 있으면 True (생성 금지 대상)."""
     low = description.lower()
     return any(bad.lower() in low for bad in _FORBIDDEN)
+
+
+def build_prompt(description: str) -> str:
+    """비임상 안전 스타일을 입힌 최종 프롬프트."""
+    return f"{_SAFE_STYLE}. Subject: {description}"
 
 
 def generate_ai_image(config: Config, description: str, out_path: Path) -> str | None:
@@ -41,27 +51,37 @@ def generate_ai_image(config: Config, description: str, out_path: Path) -> str |
         return None
 
     provider = config.secrets.image_api_provider.lower()
-    prompt = f"{_SAFE_STYLE}. Subject: {description}"
+    prompt = build_prompt(description)
+    size = config.get("images.ai_size", _DEFAULT_SIZE)
 
     if provider == "openai":
-        return _openai_image(config, prompt, out_path)
+        return _openai_image(config, prompt, out_path, size=size)
 
     # 알 수 없는 프로바이더 — 미지원
     return None
 
 
-def _openai_image(config: Config, prompt: str, out_path: Path) -> str | None:
-    """OpenAI Images API 예시 구현 (openai 패키지 설치 시)."""
-    try:
-        import base64
+def _build_openai_client(api_key: str) -> Any:
+    """OpenAI 클라이언트 생성 (테스트에서 monkeypatch 하기 쉽도록 분리)."""
+    from openai import OpenAI  # 선택적 의존성
 
-        from openai import OpenAI  # 선택적 의존성
+    return OpenAI(api_key=api_key)
+
+
+def _openai_image(
+    config: Config, prompt: str, out_path: Path, *, size: str = _DEFAULT_SIZE
+) -> str | None:
+    """OpenAI Images API 구현. 실패 시 None (인포그래픽 폴백)."""
+    try:
+        client = _build_openai_client(config.secrets.image_api_key)
     except ImportError:
         return None
+    except Exception:  # noqa: BLE001
+        return None
+
     try:
-        client = OpenAI(api_key=config.secrets.image_api_key)
         result = client.images.generate(
-            model="gpt-image-1", prompt=prompt, size="1024x1024", n=1
+            model="gpt-image-1", prompt=prompt, size=size, n=1
         )
         b64 = result.data[0].b64_json
         if not b64:
@@ -69,5 +89,5 @@ def _openai_image(config: Config, prompt: str, out_path: Path) -> str | None:
         out_path.parent.mkdir(parents=True, exist_ok=True)
         out_path.write_bytes(base64.b64decode(b64))
         return str(out_path)
-    except Exception:  # noqa: BLE001 - 이미지 실패는 치명적이지 않음(인포그래픽 폴백)
+    except Exception:  # noqa: BLE001 - 이미지 실패는 치명적이지 않음(폴백)
         return None

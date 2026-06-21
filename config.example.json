@@ -18,6 +18,7 @@
   },
   "images": {
     "ai_images_enabled": false,
+    "ai_size": "1024x1024",
     "infographics_enabled": true,
     "min_images_per_post": 3,
     "user_photo_dir": "user_photos",
@@ -34,6 +35,8 @@
     "assets_dir": "assets",
     "match_confidence": 0.8,
     "min_action_delay_sec": 0.5,
-    "max_action_delay_sec": 2.5
+    "max_action_delay_sec": 2.5,
+    "schedule_date_format": "%Y.%m.%d",
+    "schedule_time_format": "%H:%M"
   }
 }
