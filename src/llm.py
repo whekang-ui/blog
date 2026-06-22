@@ -28,7 +28,7 @@ from .config import Config
 
 # 제공자별 기본 모델
 DEFAULT_MODELS = {
-    "gemini": "gemini-2.0-flash",
+    "gemini": "gemini-2.5-flash",  # 무료 등급에서 잘 동작
     "ollama": "qwen2.5:7b",       # 한국어 양호한 오픈모델 (사용자가 변경 가능)
     "anthropic": "claude-opus-4-8",
 }
@@ -128,15 +128,14 @@ class LLM:
             body["generationConfig"]["responseMimeType"] = "application/json"
         if grounding:
             body["tools"] = [{"google_search": {}}]
-        try:
-            resp = requests.post(
-                _GEMINI_URL.format(model=self.model),
-                params={"key": key}, json=body, timeout=120,
-            )
-            resp.raise_for_status()
-            data = resp.json()
-        except Exception as exc:  # noqa: BLE001
-            raise LLMError(f"Gemini 호출 실패: {exc}") from exc
+        # 2.5 flash 계열은 기본 thinking 이 출력 토큰을 소모해 본문이 잘릴 수 있다.
+        # flash 에서는 thinking 을 꺼서 출력 토큰을 본문에 온전히 쓴다(품질 영향 적음).
+        if "2.5" in self.model and "flash" in self.model:
+            body["generationConfig"]["thinkingConfig"] = {"thinkingBudget": 0}
+        data = _post_with_retry(
+            _GEMINI_URL.format(model=self.model),
+            params={"key": key}, json_body=body, what="Gemini",
+        )
         return _gemini_text(data)
 
     # ---- Ollama (REST, local) ------------------------------------------
@@ -213,6 +212,35 @@ class LLM:
 
 
 # ---- helpers -----------------------------------------------------------
+def _post_with_retry(
+    url: str, *, params: dict | None = None, json_body: dict,
+    what: str, timeout: int = 120, retries: int = 3,
+) -> dict[str, Any]:
+    """일시 오류(429/503)에 지수 백오프로 재시도하는 POST."""
+    import time
+
+    last = ""
+    for attempt in range(retries + 1):
+        try:
+            resp = requests.post(url, params=params, json=json_body, timeout=timeout)
+        except Exception as exc:  # noqa: BLE001 - 네트워크 예외도 재시도
+            last = str(exc)
+        else:
+            if resp.status_code in (429, 503) and attempt < retries:
+                # 서버가 알려준 재시도 지연이 있으면 참고(최대 30s 캡)
+                delay = min(2 ** attempt * 2, 30)
+                last = f"{resp.status_code} (재시도 {attempt + 1}/{retries})"
+                time.sleep(delay)
+                continue
+            try:
+                resp.raise_for_status()
+                return resp.json()
+            except Exception as exc:  # noqa: BLE001
+                raise LLMError(f"{what} 호출 실패: {exc}") from exc
+        time.sleep(min(2 ** attempt * 2, 30))
+    raise LLMError(f"{what} 호출 실패(반복 일시오류): {last}")
+
+
 def _gemini_text(data: dict[str, Any]) -> str:
     parts = []
     for cand in data.get("candidates", []) or []:

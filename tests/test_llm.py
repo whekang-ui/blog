@@ -20,7 +20,7 @@ def _cfg(tmp_path, provider, model=None, gemini_key="", anthropic_key=""):
 def test_default_provider_is_gemini(tmp_path):
     llm = LLM(_cfg(tmp_path, "gemini", gemini_key="k"))
     assert llm.provider == "gemini"
-    assert llm.model == "gemini-2.0-flash"
+    assert llm.model == "gemini-2.5-flash"
 
 
 def test_ollama_default_model(tmp_path):

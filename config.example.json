@@ -8,7 +8,7 @@
   },
   "content": {
     "provider": "gemini",
-    "model": "gemini-2.0-flash",
+    "model": "gemini-2.5-flash",
     "ollama_host": "http://localhost:11434",
     "min_chars": 1500,
     "target_chars": 2200,
