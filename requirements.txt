@@ -21,5 +21,8 @@ opencv-python>=4.9.0       # button image matching (locateOnScreen confidence=)
 # GUI 는 표준 라이브러리 tkinter 사용 — 별도 설치 불필요(Windows 파이썬 기본 포함).
 # (리눅스에서 GUI 테스트 시: sudo apt-get install python3-tk)
 
+# Optional — .exe 패키징 (빌드 시에만 필요. build_exe.bat 이 자동 설치)
+# pyinstaller>=6.0.0
+
 # Dev / tests
 pytest>=8.0.0

@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -19,8 +20,20 @@ except ImportError:  # dotenv 미설치 환경에서도 import 자체는 깨지�
         return False
 
 
-# 프로젝트 루트 = 이 파일의 두 단계 위 (src/ 의 부모)
-ROOT = Path(__file__).resolve().parent.parent
+def _project_root() -> Path:
+    """프로젝트 루트 디렉터리.
+
+    - 일반 실행: 이 파일의 두 단계 위 (src/ 의 부모).
+    - PyInstaller .exe(동결): exe 가 놓인 폴더. 이렇게 해야 config.json/.env/assets/blog.db
+      를 exe 옆에서 찾는다(임시 추출폴더 _MEIxxxx 가 아니라).
+    """
+    if getattr(sys, "frozen", False):
+        return Path(sys.executable).resolve().parent
+    return Path(__file__).resolve().parent.parent
+
+
+# 프로젝트 루트 (일반 실행 시 src/ 의 부모, .exe 동결 시 exe 폴더)
+ROOT = _project_root()
 
 
 @dataclass

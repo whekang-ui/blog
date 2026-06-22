@@ -50,7 +50,25 @@ pip install -r requirements.txt
 
 ---
 
-## 🖥️ 가장 쉬운 사용법 — 데스크톱 GUI
+## 📦 .exe 로 만들어 더블클릭으로 쓰기 (파이썬 설치 없이 배포)
+명령어가 부담되면 한 번만 .exe 로 빌드해두고, 이후엔 더블클릭으로 실행하세요.
+
+**빌드(개발자/최초 1회, Windows)**
+```bat
+build_exe.bat
+```
+→ `dist\NaverBlogAutomation.exe` 가 생성됩니다. (내부적으로 PyInstaller 로 묶음)
+
+**실행(사용자)** — `dist` 폴더 안에서 아래만 준비하면 됩니다(빌드 PC가 아니어도 됨):
+1. `.env.example` → `.env` 로 복사 후 `ANTHROPIC_API_KEY` 입력
+2. `config.example.json` → `config.json` 으로 복사 후 정보 입력
+3. `assets\` 폴더에 에디터 버튼 캡처 PNG 넣기(실제 발행 자동화 시)
+4. **`NaverBlogAutomation.exe` 더블클릭** → GUI 실행
+
+> .exe 는 `config.json`/`.env`/`assets/`/`blog.db`/생성 이미지를 **exe 와 같은 폴더**에서
+> 읽고 씁니다. exe 와 이 파일들을 같은 폴더에 두세요. (.exe 빌드/실행은 Windows 전용)
+
+## 🖥️ 가장 쉬운 사용법 — 데스크톱 GUI (파이썬으로 직접 실행)
 명령어가 어렵다면 GUI 를 쓰세요. 클릭만으로 전체 과정을 진행합니다.
 ```bash
 python -m src.gui
@@ -131,4 +149,7 @@ src/
   storage/   SQLite(db)
   review.py  검토/승인   scheduler.py 발행/예약
   main.py    CLI 엔트리   gui.py 데스크톱 GUI(Tkinter)   config.py/llm.py 공통
+run_gui.py             .exe/GUI 진입점
+build_exe.bat          Windows .exe 원클릭 빌드
+packaging/naver_blog.spec   PyInstaller 스펙
 ```
