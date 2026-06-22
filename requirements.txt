@@ -1,12 +1,15 @@
 # Naver Blog Automation (dermatology) — dependencies
 # Core
-anthropic>=0.40.0          # Claude API (content/topics/SEO, web search tool)
 python-dotenv>=1.0.0       # load .env (API keys)
-requests>=2.31.0           # Naver DataLab API
+requests>=2.31.0           # LLM REST 호출(Gemini/Ollama) + Naver DataLab API
 
 # Images
 Pillow>=10.0.0             # infographic rendering, image processing
-matplotlib>=3.8.0          # chart-style infographics
+
+# LLM 제공자
+#  - gemini(무료 권장) / ollama(무료·로컬) 는 위 requests 만으로 동작(추가 설치 불필요).
+#  - anthropic(유료, content.provider="anthropic" 일 때만):
+# anthropic>=0.40.0
 
 # OS-level automation (Windows). Optional on non-Windows dev machines.
 pyautogui>=0.9.54          # mouse/keyboard automation

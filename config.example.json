@@ -7,10 +7,13 @@
     "author_persona": "환자에게 친절하게 설명하는 피부과 전문의"
   },
   "content": {
-    "model": "claude-opus-4-8",
+    "provider": "gemini",
+    "model": "gemini-2.0-flash",
+    "ollama_host": "http://localhost:11434",
     "min_chars": 1500,
     "target_chars": 2200,
-    "language": "ko"
+    "language": "ko",
+    "_comment": "provider: 'gemini'(무료 권장) | 'ollama'(완전무료·로컬) | 'anthropic'(유료). ollama 사용 시 model 예: 'qwen2.5:7b'"
   },
   "seo": {
     "min_score": 80,

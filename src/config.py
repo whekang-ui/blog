@@ -40,11 +40,20 @@ ROOT = _project_root()
 class Secrets:
     """.env 에서 읽는 비밀값."""
 
+    gemini_api_key: str = ""
     anthropic_api_key: str = ""
     naver_datalab_client_id: str = ""
     naver_datalab_client_secret: str = ""
     image_api_provider: str = ""
     image_api_key: str = ""
+
+    @property
+    def has_gemini(self) -> bool:
+        return bool(self.gemini_api_key)
+
+    @property
+    def has_anthropic(self) -> bool:
+        return bool(self.anthropic_api_key)
 
     @property
     def has_datalab(self) -> bool:
@@ -105,6 +114,7 @@ def load_config() -> Config:
     """전역 설정을 로드한다."""
     load_dotenv(ROOT / ".env")
     secrets = Secrets(
+        gemini_api_key=os.getenv("GEMINI_API_KEY", ""),
         anthropic_api_key=os.getenv("ANTHROPIC_API_KEY", ""),
         naver_datalab_client_id=os.getenv("NAVER_DATALAB_CLIENT_ID", ""),
         naver_datalab_client_secret=os.getenv("NAVER_DATALAB_CLIENT_SECRET", ""),

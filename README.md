@@ -26,14 +26,26 @@ pip install -r requirements.txt
 ```
 - Windows 데스크톱에서 실행합니다(OS 입력 자동화 때문). 콘텐츠 생성/SEO/주제발굴은 다른 OS에서도 가능.
 
+## 글 작성 AI — 무료로 쓰기 (제공자 선택)
+글 생성에 쓰는 AI는 **교체 가능**합니다. `config.json` 의 `content.provider` 로 고르세요.
+
+| 제공자 | 비용 | 준비물 | 추천 상황 |
+|---|---|---|---|
+| **`gemini`** (기본·권장) | **무료 등급** | https://aistudio.google.com/apikey 에서 무료 키 발급 → `.env` 의 `GEMINI_API_KEY` | 설치 부담 없이 무료로 좋은 한국어 품질 |
+| **`ollama`** | **완전 무료**(로컬) | https://ollama.com 설치 → `ollama pull qwen2.5:7b` (키 불필요) | 인터넷/가입 없이 내 PC에서 비공개로. PC 사양 어느 정도 필요 |
+| `anthropic` | 유료 | `ANTHROPIC_API_KEY` | 최고 품질을 원하고 비용 감수 가능할 때 |
+
+- Gemini: `config.json` → `"content": { "provider": "gemini", "model": "gemini-2.0-flash" }`
+- Ollama: `"content": { "provider": "ollama", "model": "qwen2.5:7b" }` (모델은 취향껏 변경)
+
 ## 설정
 1. `.env.example` → `.env` 복사 후 키 입력
-   - `ANTHROPIC_API_KEY` (필수)
+   - 위 표에서 고른 제공자의 키 (Gemini면 `GEMINI_API_KEY`, Ollama면 키 불필요)
    - `NAVER_DATALAB_CLIENT_ID/SECRET` (선택, 검색량 교차검증)
    - `IMAGE_API_PROVIDER/KEY` (선택, AI 비임상 이미지 생성)
-2. `config.example.json` → `config.json` 복사 후 블로그 정보/옵션 수정
-   - `blog.naver_id`, `blog.write_url`, 발행 시간·하루 제한·공개여부 등
-3. 환경 점검: `python -m src.main doctor`
+2. `config.example.json` → `config.json` 복사 후 제공자/블로그 정보 수정
+   - `content.provider`, `blog.naver_id`, `blog.write_url`, 발행 시간·하루 제한·공개여부 등
+3. 환경 점검: `python -m src.main doctor` (선택한 제공자/키 상태를 알려줌)
 
 ### 버튼 캡처 1회 셋업 (OS 자동화)
 좌표 하드코딩 대신 화면에서 버튼 이미지를 찾습니다. `assets/` 폴더에 본인 화면의 캡처를 넣으세요:
@@ -60,8 +72,8 @@ build_exe.bat
 → `dist\NaverBlogAutomation.exe` 가 생성됩니다. (내부적으로 PyInstaller 로 묶음)
 
 **실행(사용자)** — `dist` 폴더 안에서 아래만 준비하면 됩니다(빌드 PC가 아니어도 됨):
-1. `.env.example` → `.env` 로 복사 후 `ANTHROPIC_API_KEY` 입력
-2. `config.example.json` → `config.json` 으로 복사 후 정보 입력
+1. `.env.example` → `.env` 로 복사 후 무료 키 입력 (Gemini면 `GEMINI_API_KEY`, Ollama면 키 불필요)
+2. `config.example.json` → `config.json` 으로 복사 후 `content.provider`·블로그 정보 입력
 3. `assets\` 폴더에 에디터 버튼 캡처 PNG 넣기(실제 발행 자동화 시)
 4. **`NaverBlogAutomation.exe` 더블클릭** → GUI 실행
 

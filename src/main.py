@@ -221,8 +221,18 @@ def cmd_doctor(config: Config, db: Database, args: argparse.Namespace) -> int:
     from .automation.humanize import gui_available
     from .automation.ui_locator import missing_assets
 
+    provider = (config.get("content.provider", "gemini") or "gemini").lower()
+    model = config.get("content.model", "")
     print("=== 환경 점검 ===")
-    print(f"ANTHROPIC_API_KEY: {'OK' if config.secrets.anthropic_api_key else '없음'}")
+    print(f"LLM 제공자: {provider} (model={model or '기본값'})")
+    if provider == "gemini":
+        ok = config.secrets.has_gemini
+        print(f"  GEMINI_API_KEY: {'OK' if ok else '없음 → https://aistudio.google.com/apikey 무료발급'}")
+    elif provider == "ollama":
+        host = config.get("content.ollama_host", "http://localhost:11434")
+        print(f"  Ollama 호스트: {host} (ollama 실행 + `ollama pull {model or 'qwen2.5:7b'}` 필요, 키 불필요)")
+    elif provider == "anthropic":
+        print(f"  ANTHROPIC_API_KEY: {'OK' if config.secrets.has_anthropic else '없음(유료)'}")
     print(f"네이버 데이터랩: {'OK' if config.secrets.has_datalab else '미설정(선택)'}")
     print(f"AI 이미지 API: {'OK' if config.secrets.has_image_api else '미설정(선택)'}")
     print(f"GUI 자동화 가능: {'예' if gui_available() else '아니오(헤드리스/미설치)'}")
