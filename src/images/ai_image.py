@@ -3,8 +3,10 @@
 피부/스킨케어를 뜻하는 개념·일러스트·모델 느낌(예: 모델이 얼굴을 매만지는 장면, 윤기 나는 피부
 표현 등)의 '비임상' 이미지만 생성한다. 의료법상 가짜 임상/시술 전후/환자 사진은 절대 생성 금지.
 
-외부 이미지 생성 API 는 교체 가능(pluggable)하다. IMAGE_API_PROVIDER 가 비어있으면 비활성.
-현재는 'openai' 프로바이더를 지원한다. 키/프로바이더/패키지가 없으면 None 을 반환(인포그래픽 폴백).
+지원 제공자(IMAGE_API_PROVIDER):
+- "gemini" : Google Gemini 이미지 생성(무료 등급). IMAGE_API_KEY 필요.
+- "openai" : OpenAI Images(유료). IMAGE_API_KEY 필요.
+키/프로바이더가 없거나 임상 의도면 None 을 반환(인포그래픽으로 폴백).
 """
 
 from __future__ import annotations
@@ -29,6 +31,10 @@ _SAFE_STYLE = (
 )
 
 _DEFAULT_SIZE = "1024x1024"
+_DEFAULT_GEMINI_IMAGE_MODEL = "gemini-2.5-flash-image"
+_GEMINI_URL = (
+    "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+)
 
 
 def is_clinical_intent(description: str) -> bool:
@@ -52,15 +58,64 @@ def generate_ai_image(config: Config, description: str, out_path: Path) -> str |
 
     provider = config.secrets.image_api_provider.lower()
     prompt = build_prompt(description)
-    size = config.get("images.ai_size", _DEFAULT_SIZE)
 
+    if provider == "gemini":
+        return _gemini_image(config, prompt, out_path)
     if provider == "openai":
+        size = config.get("images.ai_size", _DEFAULT_SIZE)
         return _openai_image(config, prompt, out_path, size=size)
 
     # 알 수 없는 프로바이더 — 미지원
     return None
 
 
+# ---- Gemini 이미지 ------------------------------------------------------
+def _gemini_generate_content(model: str, key: str, body: dict[str, Any]) -> dict[str, Any]:
+    """Gemini generateContent 호출(테스트에서 monkeypatch 하기 쉽도록 분리)."""
+    import requests
+
+    resp = requests.post(
+        _GEMINI_URL.format(model=model), params={"key": key}, json=body, timeout=120
+    )
+    resp.raise_for_status()
+    return resp.json()
+
+
+def _gemini_image(config: Config, prompt: str, out_path: Path) -> str | None:
+    """Gemini 이미지 생성. 응답의 inlineData(base64) 를 파일로 저장."""
+    key = config.secrets.image_api_key
+    model = config.get("images.ai_model", _DEFAULT_GEMINI_IMAGE_MODEL)
+    body = {
+        "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+        "generationConfig": {"responseModalities": ["TEXT", "IMAGE"]},
+    }
+    try:
+        data = _gemini_generate_content(model, key, body)
+    except Exception:  # noqa: BLE001 - 이미지 실패는 치명적이지 않음(인포그래픽 폴백)
+        return None
+
+    img_bytes = _extract_inline_image(data)
+    if not img_bytes:
+        return None
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_bytes(img_bytes)
+    return str(out_path)
+
+
+def _extract_inline_image(data: dict[str, Any]) -> bytes | None:
+    """Gemini 응답 parts 에서 첫 inlineData(이미지) 를 디코드해 반환."""
+    for cand in data.get("candidates", []) or []:
+        for part in (cand.get("content", {}) or {}).get("parts", []) or []:
+            inline = part.get("inlineData") or part.get("inline_data")
+            if inline and inline.get("data"):
+                try:
+                    return base64.b64decode(inline["data"])
+                except Exception:  # noqa: BLE001
+                    return None
+    return None
+
+
+# ---- OpenAI 이미지 (선택, 유료) ----------------------------------------
 def _build_openai_client(api_key: str) -> Any:
     """OpenAI 클라이언트 생성 (테스트에서 monkeypatch 하기 쉽도록 분리)."""
     from openai import OpenAI  # 선택적 의존성

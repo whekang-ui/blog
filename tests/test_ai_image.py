@@ -70,3 +70,47 @@ def test_openai_failure_returns_none(tmp_path, monkeypatch):
 
     monkeypatch.setattr(ai_image, "_build_openai_client", _boom)
     assert ai_image.generate_ai_image(cfg, "스킨케어 컨셉", tmp_path / "x.png") is None
+
+
+# ---- Gemini 이미지 ------------------------------------------------------
+def test_gemini_image_success_monkeypatched(tmp_path, monkeypatch):
+    cfg = _config(tmp_path, provider="gemini", key="g-test")
+    png = b"\x89PNG\r\n gemini fake image"
+    b64 = base64.b64encode(png).decode()
+
+    def fake_call(model, key, body):
+        assert key == "g-test"
+        assert body["generationConfig"]["responseModalities"] == ["TEXT", "IMAGE"]
+        return {"candidates": [{"content": {"parts": [
+            {"text": "여기 이미지입니다"},
+            {"inlineData": {"mimeType": "image/png", "data": b64}},
+        ]}}]}
+
+    monkeypatch.setattr(ai_image, "_gemini_generate_content", fake_call)
+    out = ai_image.generate_ai_image(cfg, "윤기나는 피부 모델 컨셉", tmp_path / "g.png")
+    assert out is not None
+    assert (tmp_path / "g.png").read_bytes() == png
+
+
+def test_gemini_image_clinical_blocked(tmp_path, monkeypatch):
+    cfg = _config(tmp_path, provider="gemini", key="g-test")
+    called = {"hit": False}
+
+    def fake_call(model, key, body):
+        called["hit"] = True
+        return {}
+
+    monkeypatch.setattr(ai_image, "_gemini_generate_content", fake_call)
+    out = ai_image.generate_ai_image(cfg, "시술 전 환자 얼굴", tmp_path / "g.png")
+    assert out is None
+    assert called["hit"] is False  # 의료법 가드: API 호출 자체를 안 함
+
+
+def test_gemini_image_no_image_in_response(tmp_path, monkeypatch):
+    cfg = _config(tmp_path, provider="gemini", key="g-test")
+    monkeypatch.setattr(
+        ai_image, "_gemini_generate_content",
+        lambda model, key, body: {"candidates": [{"content": {"parts": [{"text": "거부"}]}}]},
+    )
+    assert ai_image.generate_ai_image(cfg, "스킨케어 컨셉", tmp_path / "g.png") is None
+
