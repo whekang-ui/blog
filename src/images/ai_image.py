@@ -36,7 +36,9 @@ _SAFE_STYLE = (
 _DEFAULT_SIZE = "1024x1024"
 _DEFAULT_GEMINI_IMAGE_MODEL = "gemini-2.5-flash-image"
 _DEFAULT_HF_MODEL = "black-forest-labs/FLUX.1-schnell"
-_DEFAULT_HF_ENDPOINT = "https://api-inference.huggingface.co/models/{model}"
+# 2024~ Hugging Face 는 추론 API 를 router.huggingface.co 로 이전함(구 api-inference 는
+# DNS 가 안 잡히는 경우가 있음). 필요시 config images.hf_endpoint 로 교체 가능.
+_DEFAULT_HF_ENDPOINT = "https://router.huggingface.co/hf-inference/models/{model}"
 _GEMINI_URL = (
     "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 )
@@ -109,7 +111,14 @@ def _hf_image(config: Config, prompt: str, out_path: Path) -> tuple[str | None, 
         try:
             resp = _hf_post(endpoint, token, payload)
         except Exception as exc:  # noqa: BLE001
-            return None, f"HF 네트워크 오류: {exc}"
+            msg = str(exc)
+            if "resolve" in msg or "NameResolution" in msg or "getaddrinfo" in msg:
+                return None, (
+                    "HF 주소를 찾지 못함(DNS). huggingface.co 접속이 막혔을 수 있어요 "
+                    "(병원/회사 네트워크·방화벽). 브라우저로 huggingface.co 가 열리는지 확인하거나 "
+                    "다른 네트워크에서 시도하세요."
+                )
+            return None, f"HF 네트워크 오류: {msg[:200]}"
 
         ctype = resp.headers.get("content-type", "")
         if resp.status_code == 200 and ctype.startswith("image/"):

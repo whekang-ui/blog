@@ -22,7 +22,7 @@
   "images": {
     "ai_images_enabled": true,
     "ai_model": "black-forest-labs/FLUX.1-schnell",
-    "hf_endpoint": "https://api-inference.huggingface.co/models/{model}",
+    "hf_endpoint": "https://router.huggingface.co/hf-inference/models/{model}",
     "ai_size": "1024x1024",
     "infographics_enabled": true,
     "min_images_per_post": 3,
