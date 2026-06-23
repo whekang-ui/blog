@@ -33,13 +33,21 @@ hiddenimports = [
 # 용량을 줄이기 위해 미사용 대형 패키지 제외.
 excludes = ["matplotlib", "numpy.testing", "pytest"]
 
+# 사용자가 채운 설정을 exe 안에 구워넣는다(있을 때만). 옆에 같은 파일이 있으면 그게 우선.
+# (공개 저장소에는 .env/config.json 이 커밋되지 않으므로, 빌드하는 PC의 실제 파일만 포함됨)
+import os
+datas = []
+for _f in (".env", "config.json"):
+    if os.path.exists(_f):
+        datas.append((_f, "."))
+
 block_cipher = None
 
 a = Analysis(
     ["run_gui.py"],
     pathex=[str(Path(".").resolve())],
     binaries=[],
-    datas=[],
+    datas=datas,
     hiddenimports=hiddenimports,
     hookspath=[],
     hooksconfig={},

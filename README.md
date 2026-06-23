@@ -65,20 +65,25 @@ pip install -r requirements.txt
 ## 📦 .exe 로 만들어 더블클릭으로 쓰기 (파이썬 설치 없이 배포)
 명령어가 부담되면 한 번만 .exe 로 빌드해두고, 이후엔 더블클릭으로 실행하세요.
 
-**빌드(개발자/최초 1회, Windows)**
+**준비(빌드 전 1회)** — 프로젝트 폴더에 본인 설정을 채워둡니다.
+1. `.env.example` → `.env` 로 복사 후 무료 키 입력 (Gemini면 `GEMINI_API_KEY`, Ollama면 키 불필요)
+2. `config.example.json` → `config.json` 으로 복사 후 `content.provider`·블로그 정보 입력
+3. (발행 자동화 시) `assets\` 폴더에 에디터 버튼 캡처 PNG 넣기
+
+**빌드(Windows)**
 ```bat
 build_exe.bat
 ```
-→ `dist\NaverBlogAutomation.exe` 가 생성됩니다. (내부적으로 PyInstaller 로 묶음)
+→ `dist\NaverBlogAutomation.exe` 생성. **이때 위에서 채운 `.env`/`config.json` 이 자동으로 exe 에
+포함**되고, `dist` 폴더 옆에도 복사됩니다. 따라서 **매번 설정을 다시 입력할 필요가 없습니다.**
 
-**실행(사용자)** — `dist` 폴더 안에서 아래만 준비하면 됩니다(빌드 PC가 아니어도 됨):
-1. `.env.example` → `.env` 로 복사 후 무료 키 입력 (Gemini면 `GEMINI_API_KEY`, Ollama면 키 불필요)
-2. `config.example.json` → `config.json` 으로 복사 후 `content.provider`·블로그 정보 입력
-3. `assets\` 폴더에 에디터 버튼 캡처 PNG 넣기(실제 발행 자동화 시)
-4. **`NaverBlogAutomation.exe` 더블클릭** → GUI 실행
+**실행** — `dist\NaverBlogAutomation.exe` 를 더블클릭하면 끝. 설정이 이미 들어있습니다.
+- 설정을 바꾸고 싶으면 `dist\config.json` / `dist\.env` 를 편집하면 됩니다(exe 옆 파일이 우선).
+- exe 만 다른 폴더로 옮겨도, 내부에 구워진 설정으로 동작합니다(옆에 파일이 없으면 내부값 사용).
 
-> .exe 는 `config.json`/`.env`/`assets/`/`blog.db`/생성 이미지를 **exe 와 같은 폴더**에서
-> 읽고 씁니다. exe 와 이 파일들을 같은 폴더에 두세요. (.exe 빌드/실행은 Windows 전용)
+> 🔐 **보안**: `.env`/`config.json` 에는 API 키가 들어있어 **공개 GitHub 저장소에는 절대
+> 커밋되지 않습니다**(`.gitignore` 로 제외). 키는 **빌드하는 본인 PC의 파일에서만** exe 에 포함됩니다.
+> 만든 **exe 를 타인에게 주면 키도 함께 전달**되니 공유에 주의하세요. (.exe 빌드/실행은 Windows 전용)
 
 ## 🖥️ 가장 쉬운 사용법 — 데스크톱 GUI (파이썬으로 직접 실행)
 명령어가 어렵다면 GUI 를 쓰세요. 클릭만으로 전체 과정을 진행합니다.

@@ -36,6 +36,36 @@ def _project_root() -> Path:
 ROOT = _project_root()
 
 
+def _bundle_dir() -> Path | None:
+    """PyInstaller 번들 내부 폴더(_MEIPASS). 동결이 아니면 None.
+
+    빌드 시 spec 의 datas 로 넣은 .env/config.json 이 여기에 들어간다(번들 폴백용).
+    """
+    base = getattr(sys, "_MEIPASS", None)
+    return Path(base) if base else None
+
+
+def _resource_candidates(name: str) -> list[Path]:
+    """설정 파일 탐색 후보 경로(우선순위 순).
+
+    1) exe/프로젝트 폴더 옆 (사용자가 직접 편집 가능 — 우선)
+    2) 번들 내부(_MEIPASS) (exe 에 구워넣은 기본값 — 폴백)
+    """
+    candidates = [ROOT / name]
+    bundle = _bundle_dir()
+    if bundle is not None:
+        candidates.append(bundle / name)
+    return candidates
+
+
+def _find_resource(name: str) -> Path | None:
+    """후보 중 실제 존재하는 첫 경로를 반환(없으면 None)."""
+    for path in _resource_candidates(name):
+        if path.exists():
+            return path
+    return None
+
+
 @dataclass
 class Secrets:
     """.env 에서 읽는 비밀값."""
@@ -97,10 +127,10 @@ class Config:
 
 
 def _load_config_file() -> dict[str, Any]:
-    cfg_path = ROOT / "config.json"
-    if not cfg_path.exists():
-        example = ROOT / "config.example.json"
-        if example.exists():
+    # exe/프로젝트 옆 → 번들(_MEIPASS) 순으로 config.json 탐색.
+    cfg_path = _find_resource("config.json")
+    if cfg_path is None:
+        if (ROOT / "config.example.json").exists():
             raise FileNotFoundError(
                 "config.json 이 없습니다. config.example.json 을 config.json 으로 복사한 뒤 "
                 "값을 채워주세요."
@@ -112,7 +142,10 @@ def _load_config_file() -> dict[str, Any]:
 
 def load_config() -> Config:
     """전역 설정을 로드한다."""
-    load_dotenv(ROOT / ".env")
+    # exe/프로젝트 옆 → 번들(_MEIPASS) 순으로 .env 탐색해 로드.
+    env_path = _find_resource(".env")
+    if env_path is not None:
+        load_dotenv(env_path)
     secrets = Secrets(
         gemini_api_key=os.getenv("GEMINI_API_KEY", ""),
         anthropic_api_key=os.getenv("ANTHROPIC_API_KEY", ""),
