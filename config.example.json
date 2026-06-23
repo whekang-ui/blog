@@ -1,0 +1,48 @@
+{
+  "blog": {
+    "naver_id": "your_naver_id",
+    "write_url": "https://blog.naver.com/your_naver_id?Redirect=Write",
+    "specialty": "피부과",
+    "clinic_name": "",
+    "author_persona": "환자에게 친절하게 설명하는 피부과 전문의"
+  },
+  "content": {
+    "provider": "gemini",
+    "model": "gemini-2.5-flash",
+    "ollama_host": "http://localhost:11434",
+    "min_chars": 1500,
+    "target_chars": 2200,
+    "language": "ko",
+    "_comment": "provider: 'gemini'(무료 권장) | 'ollama'(완전무료·로컬) | 'anthropic'(유료). ollama 사용 시 model 예: 'qwen2.5:7b'"
+  },
+  "seo": {
+    "min_score": 80,
+    "max_regeneration_rounds": 2
+  },
+  "images": {
+    "ai_images_enabled": true,
+    "ai_model": "black-forest-labs/FLUX.1-schnell",
+    "hf_endpoint": "https://router.huggingface.co/hf-inference/models/{model}",
+    "ai_size": "1024x1024",
+    "infographics_enabled": true,
+    "min_images_per_post": 3,
+    "user_photo_dir": "user_photos",
+    "output_dir": "generated_media",
+    "_comment": "ai_model 은 IMAGE_API_PROVIDER 에 맞춰: huggingface면 'black-forest-labs/FLUX.1-schnell' 같은 HF 모델, gemini면 'gemini-2.5-flash-image'. 정보성 자리=인포그래픽, 비임상 콘셉트 자리=AI 이미지(임상사진 차단)."
+  },
+  "publishing": {
+    "require_human_approval": true,
+    "max_posts_per_day": 2,
+    "humanize": true,
+    "default_visibility": "private",
+    "use_native_schedule": true
+  },
+  "automation": {
+    "assets_dir": "assets",
+    "match_confidence": 0.8,
+    "min_action_delay_sec": 0.5,
+    "max_action_delay_sec": 2.5,
+    "schedule_date_format": "%Y.%m.%d",
+    "schedule_time_format": "%H:%M"
+  }
+}

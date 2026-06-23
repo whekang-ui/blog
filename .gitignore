@@ -1,0 +1,20 @@
+# Secrets & local config
+.env
+config.json
+
+# Runtime data
+blog.db
+generated_media/
+user_photos/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+*.egg-info/
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,31 @@
+# Naver Blog Automation (dermatology) — dependencies
+# Core
+python-dotenv>=1.0.0       # load .env (API keys)
+requests>=2.31.0           # LLM REST 호출(Gemini/Ollama) + Naver DataLab API
+
+# Images
+Pillow>=10.0.0             # infographic rendering, image processing
+
+# LLM 제공자
+#  - gemini(무료 권장) / ollama(무료·로컬) 는 위 requests 만으로 동작(추가 설치 불필요).
+#  - anthropic(유료, content.provider="anthropic" 일 때만):
+# anthropic>=0.40.0
+
+# OS-level automation (Windows). Optional on non-Windows dev machines.
+pyautogui>=0.9.54          # mouse/keyboard automation
+pyperclip>=1.8.2           # clipboard (the only reliable way to type Hangul)
+pygetwindow>=0.0.9         # focus the Chrome window
+opencv-python>=4.9.0       # button image matching (locateOnScreen confidence=)
+
+# Optional — AI 비임상 이미지 생성 (IMAGE_API_PROVIDER=openai 일 때만 필요)
+# 미설치/키 없음이면 자동 비활성(인포그래픽으로 폴백).
+# openai>=1.40.0
+
+# GUI 는 표준 라이브러리 tkinter 사용 — 별도 설치 불필요(Windows 파이썬 기본 포함).
+# (리눅스에서 GUI 테스트 시: sudo apt-get install python3-tk)
+
+# Optional — .exe 패키징 (빌드 시에만 필요. build_exe.bat 이 자동 설치)
+# pyinstaller>=6.0.0
+
+# Dev / tests
+pytest>=8.0.0
