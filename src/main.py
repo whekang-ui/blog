@@ -156,7 +156,7 @@ def cmd_images(config: Config, db: Database, args: argparse.Namespace) -> int:
             print(f"  [{i}] {d}")
         return 0
 
-    prepared = prepare_media(config, descriptions, user_photo_map=photo_map)
+    prepared = prepare_media(config, descriptions, user_photo_map=photo_map, log=print)
     db.clear_media(post.id)
     for img in prepared:
         db.add_media(post.id, img.kind, img.path, img.alt_text, img.position)

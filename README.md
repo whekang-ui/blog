@@ -95,12 +95,21 @@ python -m src.gui
 - 발행 전 **드라이런(계획만)** 으로 동작을 먼저 확인하고, **비공개**로 발행해 결과를 본 뒤 공개하세요.
 - (Windows 파이썬은 tkinter 가 기본 포함되어 추가 설치가 필요 없습니다.)
 
-### AI 비임상 이미지 (선택)
-- `.env` 에 `IMAGE_API_PROVIDER=openai`, `IMAGE_API_KEY=...` 를 넣고 `pip install openai`,
-  `config.json` 의 `images.ai_images_enabled=true` 로 설정하면 **비임상** 개념/모델/일러스트 이미지를
-  생성합니다. 크기는 `images.ai_size`(기본 `1024x1024`).
-- 의료법 가드: 설명에 환자/시술 전후/병변 등 임상 의도가 있으면 생성을 거부하고 인포그래픽으로
-  폴백합니다. **실제 임상사진은 환자 동의를 받은 직접 촬영본만** 사용하세요.
+### AI 비임상 이미지 (선택) — 무료는 Hugging Face 권장
+제공자(`IMAGE_API_PROVIDER`)를 골라 `config.json` 의 `images.ai_images_enabled: true` 로 켭니다.
+
+| 제공자 | 비용 | 준비물 | config `images.ai_model` 예 |
+|---|---|---|---|
+| **`huggingface`** (무료 권장) | 무료 등급 | https://huggingface.co/settings/tokens 에서 토큰(`hf_…`) → `.env` `IMAGE_API_KEY` | `black-forest-labs/FLUX.1-schnell` |
+| `gemini` | 무료등급 0인 계정 많음 | `GEMINI_API_KEY` 재사용 | `gemini-2.5-flash-image` |
+| `openai` | 유료 | `pip install openai` + 키 | — |
+
+- **어느 자리에 AI vs 인포그래픽이 들어가나**: 본문 이미지 설명이 "정보/단계/비교/요약" 등이면
+  **인포그래픽**, "맑은 피부 모델·스킨케어 컷" 같은 **비임상 콘셉트**면 **AI 이미지**가 들어갑니다.
+  "이미지 준비" 시 **로그에 슬롯별 사유**가 표시됩니다(`[0] AI 생성 / [1] 인포(정보성) / [2] 인포(임상 차단) / [0] 인포(HF 503 …)`).
+- 의료법 가드: 환자/시술 전후/병변 등 임상 의도 설명은 AI 생성을 **차단**하고 인포그래픽으로 폴백합니다.
+  **실제 임상사진은 환자 동의를 받은 직접 촬영본만** 사용하세요.
+- 계속 인포그래픽만 나온다면 로그의 사유를 확인하세요(키 미설정/모델명 오타/HF 503 로딩/임상 차단 등).
 
 ## 사용법 (CLI 파이프라인)
 ```bash

@@ -21,13 +21,14 @@
   },
   "images": {
     "ai_images_enabled": true,
-    "ai_model": "gemini-2.5-flash-image",
+    "ai_model": "black-forest-labs/FLUX.1-schnell",
+    "hf_endpoint": "https://api-inference.huggingface.co/models/{model}",
     "ai_size": "1024x1024",
     "infographics_enabled": true,
     "min_images_per_post": 3,
     "user_photo_dir": "user_photos",
     "output_dir": "generated_media",
-    "_comment": "ai_images_enabled=true 면 비임상 개념/모델 이미지를 IMAGE_API_PROVIDER 로 생성(임상사진은 차단). 정보성 자리에는 인포그래픽, 그 외 자리에는 AI 이미지가 들어감."
+    "_comment": "ai_model 은 IMAGE_API_PROVIDER 에 맞춰: huggingface면 'black-forest-labs/FLUX.1-schnell' 같은 HF 모델, gemini면 'gemini-2.5-flash-image'. 정보성 자리=인포그래픽, 비임상 콘셉트 자리=AI 이미지(임상사진 차단)."
   },
   "publishing": {
     "require_human_approval": true,

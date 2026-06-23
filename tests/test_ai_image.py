@@ -114,3 +114,90 @@ def test_gemini_image_no_image_in_response(tmp_path, monkeypatch):
     )
     assert ai_image.generate_ai_image(cfg, "스킨케어 컨셉", tmp_path / "g.png") is None
 
+
+# ---- Hugging Face 이미지 ------------------------------------------------
+class _FakeResp:
+    def __init__(self, status, *, content=b"", ctype="", json_data=None, text=""):
+        self.status_code = status
+        self.content = content
+        self.headers = {"content-type": ctype}
+        self._json = json_data
+        self.text = text
+
+    def json(self):
+        if self._json is None:
+            raise ValueError("no json")
+        return self._json
+
+
+def test_hf_image_success(tmp_path, monkeypatch):
+    cfg = _config(tmp_path, provider="huggingface", key="hf_test")
+    png = b"\x89PNG\r\n hf image bytes"
+
+    def fake_post(endpoint, token, payload):
+        assert token == "hf_test"
+        assert "FLUX" in endpoint  # 기본 모델 경로
+        assert payload["inputs"]
+        return _FakeResp(200, content=png, ctype="image/png")
+
+    monkeypatch.setattr(ai_image, "_hf_post", fake_post)
+    path, reason = ai_image.generate_ai_image_verbose(
+        cfg, "맑고 윤기나는 피부 모델", tmp_path / "hf.png"
+    )
+    assert reason is None
+    assert path is not None
+    assert (tmp_path / "hf.png").read_bytes() == png
+
+
+def test_hf_image_loading_then_success(tmp_path, monkeypatch):
+    cfg = _config(tmp_path, provider="hf", key="hf_test")
+    png = b"\x89PNG ok"
+    calls = {"n": 0}
+
+    def fake_post(endpoint, token, payload):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            return _FakeResp(503, json_data={"estimated_time": 0.01})
+        return _FakeResp(200, content=png, ctype="image/png")
+
+    monkeypatch.setattr(ai_image, "_hf_post", fake_post)
+    monkeypatch.setattr(ai_image.time, "sleep", lambda *_: None)
+    path, reason = ai_image.generate_ai_image_verbose(cfg, "스킨케어 컷", tmp_path / "h.png")
+    assert path is not None and reason is None
+    assert calls["n"] == 2
+
+
+def test_hf_image_error_returns_reason(tmp_path, monkeypatch):
+    cfg = _config(tmp_path, provider="huggingface", key="hf_test")
+    monkeypatch.setattr(
+        ai_image, "_hf_post",
+        lambda e, t, p: _FakeResp(404, json_data={"error": "model not found"}),
+    )
+    path, reason = ai_image.generate_ai_image_verbose(cfg, "스킨케어 컷", tmp_path / "h.png")
+    assert path is None
+    assert "404" in reason and "model not found" in reason
+
+
+def test_hf_clinical_blocked_no_call(tmp_path, monkeypatch):
+    cfg = _config(tmp_path, provider="huggingface", key="hf_test")
+    called = {"hit": False}
+
+    def fake_post(e, t, p):
+        called["hit"] = True
+        return _FakeResp(200, content=b"x", ctype="image/png")
+
+    monkeypatch.setattr(ai_image, "_hf_post", fake_post)
+    path, reason = ai_image.generate_ai_image_verbose(
+        cfg, "시술 전 환자 얼굴", tmp_path / "h.png"
+    )
+    assert path is None
+    assert "차단" in reason
+    assert called["hit"] is False
+
+
+def test_unknown_provider_reason(tmp_path):
+    cfg = _config(tmp_path, provider="midjourney", key="x")
+    path, reason = ai_image.generate_ai_image_verbose(cfg, "스킨케어", tmp_path / "x.png")
+    assert path is None
+    assert "미지원" in reason
+

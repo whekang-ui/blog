@@ -305,7 +305,9 @@ class App:
             descs = extract_image_descriptions(post.body)
             photos = list_user_photos(self.config)
             photo_map = build_photo_map(photos, _parse_photo_map(spec))
-            prepared = prepare_media(self.config, descs, user_photo_map=photo_map)
+            prepared = prepare_media(
+                self.config, descs, user_photo_map=photo_map, log=self.log_msg
+            )
             self.db.clear_media(pid)
             for img in prepared:
                 self.db.add_media(pid, img.kind, img.path, img.alt_text, img.position)
